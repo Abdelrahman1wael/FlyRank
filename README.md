@@ -10,27 +10,11 @@ Welcome to **FlyRank**, a comprehensive, production-grade training and internshi
 <summary><b>Click to Expand / Collapse Table of Contents</b></summary>
 
 1. [About FlyRank](#-about-flyrank)
-2. [Curriculum Overview & Assignments](#-curriculum-overview--assignments)
-   - [Module 1: Task CRUD API (In-Memory REST API)](#module-1-task-crud-api-in-memory-rest-api)
-   - [Module 2: Task Management API with SQLite](#module-2-task-management-api-with-sqlite)
-   - [Module 3: Full-Stack Task API with Postgres & Docker](#module-3-full-stack-task-api-with-postgres--docker)
-   - [Module 4: Supabase Auth Gateway (JWT Authentication)](#module-4-supabase-auth-gateway-jwt-authentication)
-   - [Module 5: Idempotent Web Scraper Data Pipeline](#module-5-idempotent-web-scraper-data-pipeline)
-   - [Module 6: Production-Grade LLM Classification Endpoint](#module-6-production-grade-llm-classification-endpoint)
-   - [Module 7: Automated PDF Report Generator Pipeline](#module-7-automated-pdf-report-generator-pipeline)
-   - [Module 8: Asynchronous Background Job System (Inngest)](#module-8-asynchronous-background-job-system-inngest)
-   - [Graduation: AI Image Understanding & Content Matching Engine](#graduation-ai-image-understanding--content-matching-engine)
-3. [Quick Start & Bash Environment Setup](#-quick-start--bash-environment-setup)
-   - [Automated Setup Script (`setup.sh`)](#automated-setup-script-setupsh)
+
+2. [Quick Start & Bash Environment Setup](#-quick-start--bash-environment-setup)
    - [Manual Prerequisites](#manual-prerequisites)
-4. [Bash Commands Reference](#-bash-commands-reference)
-   - [Running Node.js Express Modules](#running-nodejs-express-modules)
-   - [Running Python FastAPI Modules](#running-python-fastapi-modules)
-   - [cURL Testing & Verification Commands](#curl-testing--verification-commands)
-   - [Docker & Database Commands](#docker--database-commands)
-5. [Repository Structure](#-repository-structure)
-6. [FlyRank Contributors & How to Contribute](#-flyrank-contributors--how-to-contribute)
-7. [License](#-license)
+3. [FlyRank Contributors & How to Contribute](#-flyrank-contributors--how-to-contribute)
+4. [License](#-license)
 
 </details>
 
