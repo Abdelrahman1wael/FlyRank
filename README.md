@@ -10,11 +10,8 @@ Welcome to **FlyRank**, a comprehensive, production-grade training and internshi
 <summary><b>Click to Expand / Collapse Table of Contents</b></summary>
 
 1. [About FlyRank](#-about-flyrank)
-
-2. [Quick Start & Bash Environment Setup](#-quick-start--bash-environment-setup)
-   - [Manual Prerequisites](#manual-prerequisites)
-3. [FlyRank Contributors & How to Contribute](#-flyrank-contributors--how-to-contribute)
-4. [License](#-license)
+2. [FlyRank Contributors & How to Contribute](#-flyrank-contributors--how-to-contribute)
+3. [License](#-license)
 
 </details>
 
