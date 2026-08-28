@@ -4,6 +4,12 @@ const PORT = 3000;
 // Middleware to parse JSON request bodies
 app.use(express.json());
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./openapi.json');
+
+// Serve interactive Swagger UI documentation
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 let tasks = [
   { id: 1, title: "Buy groceries", done: false },
   { id: 2, title: "Clean the room", done: true },
