@@ -10,6 +10,13 @@ let tasks = [
   { id: 3, title: "Study API design", done: false }
 ];
 
+const initialTasks = [
+  { id: 1, title: "Buy groceries", done: false },
+  { id: 2, title: "Clean the room", done: true },
+  { id: 3, title: "Study API design", done: false }
+];
+let tasks = [...initialTasks];
+
 // Middleware to parse JSON request bodies
 app.use(express.json());
 
@@ -101,6 +108,37 @@ app.delete('/tasks/:id', (req, res) => {
 
   tasks.splice(taskIndex, 1);
   res.status(204).send(); // 204 No Content has an empty body
+});
+
+// GET /tasks - Supports ?done=true/false and ?search=word
+app.get('/tasks', (req, res) => {
+  let filteredTasks = [...tasks];
+  const { done, search } = req.query;
+
+  if (done !== undefined) {
+    filteredTasks = filteredTasks.filter(t => t.done === (done === "true"));
+  }
+  if (search) {
+    filteredTasks = filteredTasks.filter(t =>
+      t.title.toLowerCase().includes(search.toLowerCase())
+    );
+  }
+  res.json(filteredTasks);
+});
+
+// GET /stats
+app.get('/stats', (req, res) => {
+  res.json({
+    total: tasks.length,
+    done: tasks.filter(t => t.done).length,
+    open: tasks.filter(t => !t.done).length
+  });
+});
+
+// POST /reset - restore seed data
+app.post('/reset', (req, res) => {
+  tasks = [...initialTasks];
+  res.json({ message: "Tasks reset to initial seed data", tasks });
 });
 
 app.listen(PORT, () => {
