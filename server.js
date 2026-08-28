@@ -68,6 +68,40 @@ app.get('/tasks/:id', (req, res) => {
   res.json(task);
 });
 
+app.put('/tasks/:id', (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const taskIndex = tasks.findIndex(t => t.id === taskId);
+  if (taskIndex === -1) {
+    return res.status(404).json({ error: `Task ${taskId} not found` });
+  }
+
+  const { title, done } = req.body;
+  if (title === undefined && done === undefined) {
+    return res.status(400).json({ error: "Missing fields to update" });
+  }
+  if (title !== undefined && (!title || title.trim() === "")) {
+    return res.status(400).json({ error: "Title cannot be empty" });
+  }
+  if (done !== undefined && typeof done !== "boolean") {
+    return res.status(400).json({ error: "'done' must be a boolean" });
+  }
+
+  if (title !== undefined) tasks[taskIndex].title = title;
+  if (done !== undefined) tasks[taskIndex].done = done;
+  res.json(tasks[taskIndex]);
+});
+
+app.delete('/tasks/:id', (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const taskIndex = tasks.findIndex(t => t.id === taskId);
+
+  if (taskIndex === -1) {
+    return res.status(404).json({ error: `Task ${taskId} not found` });
+  }
+
+  tasks.splice(taskIndex, 1);
+  res.status(204).send(); // 204 No Content has an empty body
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
