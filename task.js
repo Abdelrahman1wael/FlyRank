@@ -89,3 +89,44 @@ app.post('/tasks', (req, res) => {
     done: false
   });
 });
+
+app.put('/tasks/:id', (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const { title, done } = req.body;
+
+  if (title === undefined && done === undefined) {
+    return res.status(400).json({ error: "Missing fields to update" });
+  }
+  if (title !== undefined && (!title || title.trim() === "")) {
+    return res.status(400).json({ error: "Title cannot be empty" });
+  }
+  if (done !== undefined && typeof done !== "boolean") {
+    return res.status(400).json({ error: "Done must be a boolean value" });
+  }
+
+  // Fetch the existing record to fill in any omitted fields
+  const currentTask = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
+  if (!currentTask) {
+    return res.status(404).json({ error: `Task ${taskId} not found` });
+  }
+
+  const finalTitle = title !== undefined ? title : currentTask.title;
+  const finalDone = done !== undefined ? (done ? 1 : 0) : currentTask.done;
+
+  db.prepare('UPDATE tasks SET title = ?, done = ? WHERE id = ?')
+    .run(finalTitle, finalDone, taskId);
+
+  res.json({ id: taskId, title: finalTitle, done: Boolean(finalDone) });
+});
+
+app.delete('/tasks/:id', (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const result = db.prepare('DELETE FROM tasks WHERE id = ?').run(taskId);
+
+  // If no database rows changed, the ID did not exist
+  if (result.changes === 0) {
+    return res.status(404).json({ error: `Task ${taskId} not found` });
+  }
+
+  res.status(204).send();
+});
