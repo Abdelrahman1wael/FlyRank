@@ -143,41 +143,7 @@ app.delete('/tasks/:id', (req, res) => {
   res.status(204).send();
 });
 
-const express = require('express');
-const Database = require('better-sqlite3');
-const app = express();
-const PORT = 3000;
 
-app.use(express.json());
-
-const db = new Database('tasks.db');
-
-// Updated schema including timestamp fields
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    done INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`).run();
-
-// Migration guard: add columns if an older database file is missing them
-try {
-  db.prepare("ALTER TABLE tasks ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
-  db.prepare("ALTER TABLE tasks ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
-} catch (e) {
-  // Columns already exist — skip
-}
-
-const rowCount = db.prepare('SELECT COUNT(*) as count FROM tasks').get();
-if (rowCount.count === 0) {
-  const insertTask = db.prepare('INSERT INTO tasks (title, done) VALUES (?, ?)');
-  insertTask.run("Buy groceries", 0);
-  insertTask.run("Clean the room", 1);
-  insertTask.run("Study API design", 0);
-}
 
 // Extras: search, filter, and alphabetical sort
 app.get('/tasks', (req, res) => {
