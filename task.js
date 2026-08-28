@@ -5,21 +5,33 @@ const PORT = 3000;
 
 app.use(express.json());
 
+
+
 // Open (and automatically create) the tasks.db file
 const db = new Database('tasks.db');
 
 // Create the tasks table if it does not exist
+// Updated schema including timestamp fields
 db.prepare(`
   CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
-    done INTEGER DEFAULT 0
+    done INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `).run();
 
+// Migration guard: add columns if an older database file is missing them
+try {
+  db.prepare("ALTER TABLE tasks ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+  db.prepare("ALTER TABLE tasks ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+} catch (e) {
+  // Columns already exist — skip
+}
+
 // Check if the table is empty before seeding example data
 const rowCount = db.prepare('SELECT COUNT(*) as count FROM tasks').get();
-
 if (rowCount.count === 0) {
   const insertTask = db.prepare('INSERT INTO tasks (title, done) VALUES (?, ?)');
   insertTask.run("Buy groceries", 0);
@@ -129,4 +141,106 @@ app.delete('/tasks/:id', (req, res) => {
   }
 
   res.status(204).send();
+});
+
+const express = require('express');
+const Database = require('better-sqlite3');
+const app = express();
+const PORT = 3000;
+
+app.use(express.json());
+
+const db = new Database('tasks.db');
+
+// Updated schema including timestamp fields
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    done INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`).run();
+
+// Migration guard: add columns if an older database file is missing them
+try {
+  db.prepare("ALTER TABLE tasks ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+  db.prepare("ALTER TABLE tasks ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP").run();
+} catch (e) {
+  // Columns already exist — skip
+}
+
+const rowCount = db.prepare('SELECT COUNT(*) as count FROM tasks').get();
+if (rowCount.count === 0) {
+  const insertTask = db.prepare('INSERT INTO tasks (title, done) VALUES (?, ?)');
+  insertTask.run("Buy groceries", 0);
+  insertTask.run("Clean the room", 1);
+  insertTask.run("Study API design", 0);
+}
+
+// Extras: search, filter, and alphabetical sort
+app.get('/tasks', (req, res) => {
+  const { done, search } = req.query;
+  let query = 'SELECT * FROM tasks WHERE 1=1';
+  const params = [];
+
+  if (done !== undefined) {
+    query += ' AND done = ?';
+    params.push(done === 'true' ? 1 : 0);
+  }
+  if (search !== undefined && search.trim() !== "") {
+    query += ' AND LOWER(title) LIKE ?';
+    params.push(`%${search.toLowerCase()}%`);
+  }
+  query += ' ORDER BY title ASC';
+
+  const rows = db.prepare(query).all(...params);
+  res.json(rows.map(row => ({
+    id: row.id,
+    title: row.title,
+    done: Boolean(row.done),
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  })));
+});
+
+// Extras: natively computed statistics
+app.get('/stats', (req, res) => {
+  const total = db.prepare('SELECT COUNT(*) as count FROM tasks').get().count;
+  const done = db.prepare('SELECT COUNT(*) as count FROM tasks WHERE done = 1').get().count;
+  const open = db.prepare('SELECT COUNT(*) as count FROM tasks WHERE done = 0').get().count;
+  res.json({ total, done, open });
+});
+
+// Extras: timestamp mutations on insert / update
+app.post('/tasks', (req, res) => {
+  const { title } = req.body;
+  if (!title || title.trim() === "") return res.status(400).json({ error: "Title is required" });
+
+  const result = db.prepare('INSERT INTO tasks (title, done) VALUES (?, 0)').run(title);
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
+
+  res.status(201).json({ ...task, done: Boolean(task.done) });
+});
+
+app.put('/tasks/:id', (req, res) => {
+  const taskId = parseInt(req.params.id);
+  const { title, done } = req.body;
+
+  const currentTask = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
+  if (!currentTask) return res.status(404).json({ error: "Task not found" });
+
+  const finalTitle = title !== undefined ? title : currentTask.title;
+  const finalDone = done !== undefined ? (done ? 1 : 0) : currentTask.done;
+
+  // Explicitly refresh the updated_at timestamp on modification
+  db.prepare(`
+    UPDATE tasks
+    SET title = ?, done = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(finalTitle, finalDone, taskId);
+
+  const updatedTask = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
+  res.json({ ...updatedTask, done: Boolean(updatedTask.done) });
 });
