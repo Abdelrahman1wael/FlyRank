@@ -83,4 +83,36 @@ app.get('/protected/profile', (req, res) => {
     message: "You presented a token! Verification logic goes here in the next stage."
   });
 });
+
+app.get('/protected/profile', async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  // 1. Extract and validate header presence
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: "Access token required" });
+  }
+
+  const parts = authHeader.split(' ');
+  const token = parts[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Access token required" });
+  }
+
+  // 2. Ask Supabase if the token is authentic
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  // 3. Turn away expired, tampered, or invalid tokens
+  if (error || !user) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+
+  // 4. Return safe user metadata on success
+  return res.status(200).json({
+    id: user.id,
+    email: user.email,
+    created_at: user.created_at
+  });
+});
+
 app.listen(3000, () => console.log('Server running on port 3000'));
