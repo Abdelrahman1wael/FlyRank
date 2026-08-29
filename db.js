@@ -2,8 +2,10 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || 'postgres://postgres:dev@localhost:5432/my_new_database',
 });
 
 const initDb = async () => {
@@ -44,6 +46,8 @@ const initDb = async () => {
 };
 
 // Initialize connection immediately on module load
-initDb();
+initDb().catch(err => {
+  console.error('Database connection warning:', err.message);
+});
 
 module.exports = pool;

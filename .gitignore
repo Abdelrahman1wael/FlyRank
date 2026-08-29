@@ -12,3 +12,4 @@ yarn-error.log*
 .blevel/
 .DS_Store
 Thumbs.db
+.bevel/do_not_share

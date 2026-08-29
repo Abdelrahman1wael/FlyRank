@@ -1,111 +1,57 @@
 const express = require('express');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const pool = require('./db'); // Import the Postgres connection pool
 
 app.use(express.json());
 
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 5432,
-});
-
-// FIXED: Corrected array nesting brackets
-const initialTasks = [
-  { id: 1, title: "Buy groceries", done: false },
-  { id: 2, title: "Clean the room", done: true },
-  { id: 3, title: "Study API design", done: false }
-];
-
-// In-memory runtime database array
-let tasks = [...initialTasks];
-
 app.get('/', (req, res) => {
-  res.json({ name: "Task API", version: "1.0", endpoints: ["/tasks", "/stats"] });
+  res.json({ name: "Task API", version: "1.0", endpoints: ["/tasks", "/stats", "/health"] });
 });
 
-app.get('/health', (req, res) => {
-  res.json({ status: "ok" });
-});
-
-// GET /tasks — Supports ?done=true/false and ?search=word parameters
-app.get('/tasks', (req, res) => {
-  let filteredTasks = [...tasks];
-  const { done, search } = req.query;
-
-  if (done !== undefined) {
-    const isDone = done === 'true';
-    // FIXED: Now properly reassigning the filtered array result
-    filteredTasks = filteredTasks.filter(t => t.done === isDone);
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1;');
+    res.json({ status: "ok", db: "connected" });
+  } catch (err) {
+    res.status(500).json({ status: "error", db: "disconnected", error: err.message });
   }
+});
 
-  if (search !== undefined && search.trim() !== "") {
-    filteredTasks = filteredTasks.filter(t =>
-      t.title.toLowerCase().includes(search.toLowerCase())
-    );
+// GET /stats — Calculates summary information from Postgres
+app.get('/stats', async (req, res) => {
+  try {
+    const totalRes = await pool.query('SELECT COUNT(*) FROM tasks;');
+    const doneRes = await pool.query('SELECT COUNT(*) FROM tasks WHERE done = true;');
+    const total = parseInt(totalRes.rows[0].count, 10);
+    const done = parseInt(doneRes.rows[0].count, 10);
+    const open = total - done;
+    res.json({ total, done, open });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
-
-  res.json(filteredTasks);
 });
 
-// GET /stats — Calculates summary information
-app.get('/stats', (req, res) => {
-  const total = tasks.length;
-  const done = tasks.filter(t => t.done).length;
-  const open = total - done;
-  res.json({ total, done, open });
+// POST /reset — Re-seeds initial values in Postgres
+app.post('/reset', async (req, res) => {
+  try {
+    await pool.query('TRUNCATE TABLE tasks RESTART IDENTITY;');
+    const seedQuery = `
+      INSERT INTO tasks (title, done) VALUES
+      ('Buy groceries', false),
+      ('Clean the room', true),
+      ('Study API design', false);
+    `;
+    await pool.query(seedQuery);
+    res.json({ message: "Database reset to initial seed values", count: 3 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
-// POST /reset — Re-seeds initial values
-app.post('/reset', (req, res) => {
-  tasks = [...initialTasks];
-  res.json({ message: "Database reset to initial seed values", count: tasks.length });
-});
-
-// Standard CRUD endpoints below
-app.get('/tasks/:id', (req, res) => {
-  const taskId = parseInt(req.params.id);
-  const task = tasks.find(t => t.id === taskId);
-  if (!task) return res.status(404).json({ error: `Task ${taskId} not found` });
-  res.json(task);
-});
-
-app.post('/tasks', (req, res) => {
-  const { title } = req.body;
-  if (!title || title.trim() === "") return res.status(400).json({ error: "Title is required" });
-  const nextId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-  const newTask = { id: nextId, title, done: false };
-  tasks.push(newTask);
-  res.status(201).json(newTask);
-});
-
-app.put('/tasks/:id', (req, res) => {
-  const taskId = parseInt(req.params.id);
-  const taskIndex = tasks.findIndex(t => t.id === taskId);
-  if (taskIndex === -1) return res.status(404).json({ error: `Task ${taskId} not found` });
-
-  const { title, done } = req.body;
-  if (title === undefined && done === undefined) return res.status(400).json({ error: "Missing fields to update" });
-  if (title !== undefined && (!title || title.trim() === "")) return res.status(400).json({ error: "Title cannot be empty" });
-  if (done !== undefined && typeof done !== "boolean") return res.status(400).json({ error: "done must be boolean" });
-
-  if (title !== undefined) tasks[taskIndex].title = title;
-  if (done !== undefined) tasks[taskIndex].done = done;
-  res.json(tasks[taskIndex]);
-});
-
-app.delete('/tasks/:id', (req, res) => {
-  const taskId = parseInt(req.params.id);
-  const taskIndex = tasks.findIndex(t => t.id === taskId);
-  if (taskIndex === -1) return res.status(404).json({ error: `Task ${taskId} not found` });
-  tasks.splice(taskIndex, 1);
-  res.status(204).send();
-});
-
-/ GET /tasks - Reads straight from Postgres
+// GET /tasks - Reads straight from Postgres
 app.get('/tasks', async (req, res) => {
   try {
     let sql = 'SELECT * FROM tasks WHERE 1=1';
@@ -220,6 +166,5 @@ app.delete('/tasks/:id', async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));

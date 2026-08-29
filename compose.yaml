@@ -3,7 +3,7 @@ services:
     build: .
     ports: ["3000:3000"]
     environment:
-      DATABASE_URL: postgres://postgres:dev@db:5432/tasks
+      DATABASE_URL: postgres://postgres:dev@db:5432/my_new_database
     depends_on:
       - db
 
@@ -11,7 +11,7 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_PASSWORD: dev
-      POSTGRES_DB: tasks
+      POSTGRES_DB: my_new_database
     volumes:
       - taskdata:/var/lib/postgresql/data
 
