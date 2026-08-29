@@ -60,4 +60,27 @@ app.post('/auth/login', async (req, res) => {
   });
 });
 
+// GET /public/info
+app.get('/public/info', (req, res) => {
+  return res.status(200).json({ message: "Welcome stranger! This info is public." });
+});
+
+// GET /protected/profile
+app.get('/protected/profile', (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: "Access token required" });
+  }
+
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: "Access token required" });
+  }
+
+  // Token is present (unverified for now)
+  return res.status(200).json({
+    message: "You presented a token! Verification logic goes here in the next stage."
+  });
+});
 app.listen(3000, () => console.log('Server running on port 3000'));
