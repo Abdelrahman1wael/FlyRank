@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const PORT = 3000;
+const pool = require('./db'); // Import the Postgres connection pool
 
 app.use(express.json());
 
@@ -95,5 +96,56 @@ app.delete('/tasks/:id', (req, res) => {
   tasks.splice(taskIndex, 1);
   res.status(204).send();
 });
+
+/ GET /tasks - Reads straight from Postgres
+app.get('/tasks', async (req, res) => {
+  try {
+    let sql = 'SELECT * FROM tasks WHERE 1=1';
+    const params = [];
+    const { done, search } = req.query;
+
+    if (done !== undefined) {
+      params.push(done === 'true');
+      sql += ` AND done = $${params.length}`;
+    }
+
+    if (search !== undefined && search.trim() !== "") {
+      params.push(`%${search.toLowerCase()}%`);
+      sql += ` AND LOWER(title) LIKE $${params.length}`;
+    }
+
+    sql += ' ORDER BY id ASC;';
+
+    const result = await pool.query(sql, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /tasks/:id - Reads a single item securely via placeholders
+app.get('/tasks/:id', async (req, res) => {
+  const taskId = parseInt(req.params.id, 10);
+  if (isNaN(taskId)) {
+    return res.status(400).json({ error: "Invalid task ID format" });
+  }
+
+  try {
+    const result = await pool.query('SELECT * FROM tasks WHERE id = $1;', [taskId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: `Task ${taskId} not found` });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// (Keep remaining placeholder endpoints below until we update them in subsequent steps)
+app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
 
 app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
