@@ -6,7 +6,7 @@ export const InputSchema = z.object({
   category_hint: z.string().optional(),
 });
 
-// Output Schema (the target structure defined in JOB-CARD.md)
+// Stage 1 Output Schema
 export const OutputSchema = z.object({
   category: z.enum(["support", "billing", "technical", "spam"]),
   confidence: z.number().min(0).max(1),
@@ -15,11 +15,33 @@ export const OutputSchema = z.object({
   requires_human: z.boolean(),
 });
 
-// Hard-coded mock data satisfying OutputSchema, for Stub Mode
 export const stubOutput = {
   category: "technical",
   confidence: 0.95,
   summary: "Stub response: user experienced a database connection failure...",
   tags: ["database", "error", "checkout"],
   requires_human: true,
+};
+
+// Stage 2+ Job Card Output Schema
+export const JobCardOutputSchema = z.object({
+  status: z.enum(["success", "failed", "pending"]),
+  confidence: z.number().min(0).max(1),
+  extractedData: z.object({
+    title: z.string(),
+    tags: z.array(z.string()),
+    priority: z.enum(["low", "medium", "high"]),
+  }),
+  summary: z.string(),
+});
+
+export const stubResponse = {
+  status: "success",
+  confidence: 0.98,
+  extractedData: {
+    title: "Database connection failure in billing module",
+    tags: ["database", "billing", "error"],
+    priority: "high",
+  },
+  summary: "The billing engine failed to update invoice yesterday due to connection timeout.",
 };

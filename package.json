@@ -1,0 +1,15 @@
+{
+  "name": "flyrank-llm-endpoint",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node --env-file=.env index.js",
+    "eval": "node evals/run-evals.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "openai": "^4.56.0",
+    "zod": "^3.23.8"
+  }
+}

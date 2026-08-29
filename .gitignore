@@ -4,6 +4,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Environment & Secrets
+.env
+.env*.local
+
+# Logs & Data
+logs/
+
 # VS Code
 .vscode/
 *.code-workspace
@@ -12,4 +19,5 @@ yarn-error.log*
 .blevel/
 .DS_Store
 Thumbs.db
+.bevel/
 .bevel/do_not_share
