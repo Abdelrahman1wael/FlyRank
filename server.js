@@ -12,10 +12,7 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
   process.exit(1);
 }
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 app.use(express.json());
 
@@ -114,5 +111,36 @@ app.get('/protected/profile', async (req, res) => {
     created_at: user.created_at
   });
 });
+
+// POST /auth/logout (Protected Route)
+app.post('/auth/logout', requireAuth, async (req, res) => {
+  // Pass the user's specific access token to scope the sign-out globally
+  const { error } = await supabase.auth.admin.signOut(req.token);
+
+  if (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  return res.sendStatus(204);
+});
+
+// ============================================
+// 3. PROTECTED ROUTES
+// ============================================
+app.get('/protected/profile', requireAuth, (req, res) => {
+  return res.status(200).json({
+    id: req.user.id,
+    email: req.user.email,
+    created_at: req.user.created_at
+  });
+});
+
+app.get('/protected/dashboard', requireAuth, (req, res) => {
+  return res.status(200).json({
+    message: `Welcome to your dashboard, ${req.user.email}!`,
+    stats: { premium: true }
+  });
+});
+
 
 app.listen(3000, () => console.log('Server running on port 3000'));
