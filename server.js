@@ -1,6 +1,7 @@
 import express from 'express';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 
 dotenv.config();
 
@@ -19,6 +20,90 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running smoothly' });
 });
+
+import express from 'express';
+import swaggerUi from 'swagger-ui-express';
+import { createClient } from '@supabase/supabase-js';
+
+const app = express();
+app.use(express.json());
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+
+// ============================================
+// 1. OPENAPI SPECIFICATION (WITH JWT BEARER AUTH)
+// ============================================
+const openapiSpecification = {
+  openapi: "3.0.0",
+  info: {
+    title: "Supabase Auth API",
+    version: "1.0.0",
+    description: "API with complete signup, login, logout, and protected routes using Supabase"
+  },
+  components: {
+    securitySchemes: {
+      // Define the padlock configuration
+      BearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        description: "Enter your Supabase access_token (JWT) here."
+      }
+    }
+  },
+  paths: {
+    "/auth/signup": {
+      post: {
+        summary: "Register a new user",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object", properties: { email: {}, password: {} } } } }
+        },
+        responses: { 201: { description: "Created" }, 400: { description: "Bad Request" } }
+      }
+    },
+    "/auth/login": {
+      post: {
+        summary: "Log in an existing user",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object", properties: { email: {}, password: {} } } } }
+        },
+        responses: { 200: { description: "OK" }, 401: { description: "Unauthorized" } }
+      }
+    },
+    "/public/info": {
+      get: {
+        summary: "Get public information",
+        responses: { 200: { description: "OK" } }
+      }
+    },
+    "/auth/logout": {
+      post: {
+        summary: "Log out the current user",
+        security: [{ BearerAuth: [] }], // Lock icon applied here
+        responses: { 204: { description: "No Content" }, 401: { description: "Unauthorized" } }
+      }
+    },
+    "/protected/profile": {
+      get: {
+        summary: "Get user profile details",
+        security: [{ BearerAuth: [] }], // Lock icon applied here
+        responses: { 200: { description: "OK" }, 401: { description: "Unauthorized" } }
+      }
+    },
+    "/protected/dashboard": {
+      get: {
+        summary: "Get user dashboard data",
+        security: [{ BearerAuth: [] }], // Lock icon applied here
+        responses: { 200: { description: "OK" }, 401: { description: "Unauthorized" } }
+      }
+    }
+  }
+};
+
+// Serve Swagger UI at /docs
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification));
 
 // POST /auth/signup
 app.post('/auth/signup', async (req, res) => {
