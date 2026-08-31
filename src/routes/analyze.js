@@ -159,9 +159,9 @@ async function callModelWithRetry(systemPrompt, userPayload, messagesHistory = [
 
 async function handleClassificationRequest(expressReq, expressRes) {
   try {
-    // 1. Kill Switch Check
+    // 1. Kill Switch / Disabled Check
     if (process.env.LLM_ENABLED === "false") {
-      return expressRes.status(503).json({ error: "Service Temporarily Unavailable" });
+      return expressRes.status(200).json(stubResponse);
     }
 
     // 2. Validate input
