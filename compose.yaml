@@ -1,17 +1,24 @@
 services:
   api:
     build: .
-    ports: ["3000:3000"]
-    environment:
-      DATABASE_URL: postgres://postgres:dev@db:5432/my_new_database
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:15-alpine
     environment:
       POSTGRES_PASSWORD: dev
       POSTGRES_DB: my_new_database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d my_new_database"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
     volumes:
       - taskdata:/var/lib/postgresql/data
 
