@@ -4,11 +4,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# VS Code
+# VS Code & IDE
 .vscode/
+.bevel/
+.blevel/
 *.code-workspace
 
-# Blevel / Build / OS
-.blevel/
+# OS
 .DS_Store
 Thumbs.db

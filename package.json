@@ -1,4 +1,11 @@
 {
+  "name": "flyrank-task-api",
+  "version": "1.0.0",
+  "description": "Task Management API backed by SQLite",
+  "main": "task.js",
+  "scripts": {
+    "start": "node task.js"
+  },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "express": "^5.2.1",
